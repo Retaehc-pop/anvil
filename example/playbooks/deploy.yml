@@ -1,0 +1,15 @@
+---
+- name: Deploy web application
+  hosts: webservers
+  gather_facts: false
+  vars:
+    app_version: "1.2.3"
+    deploy_path: /opt/app
+  tasks:
+    - name: Check deploy target
+      ansible.builtin.debug:
+        msg: "Deploying {{ app_version }} to {{ deploy_path }} on {{ inventory_hostname }}"
+
+    - name: Verify environment
+      ansible.builtin.debug:
+        msg: "Environment is {{ env }}"

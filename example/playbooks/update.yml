@@ -1,0 +1,16 @@
+---
+- name: Update cluster nodes
+  hosts: cluster
+  gather_facts: false
+  tasks:
+    - name: Check node status
+      ansible.builtin.debug:
+        msg: "Checking {{ inventory_hostname }} in group cluster"
+
+- name: Update monitoring
+  hosts: monitoring
+  gather_facts: false
+  tasks:
+    - name: Refresh monitoring config
+      ansible.builtin.debug:
+        msg: "Updating monitoring on {{ inventory_hostname }}"

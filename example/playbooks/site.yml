@@ -1,0 +1,11 @@
+---
+- name: Configure all servers
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ping all hosts
+      ansible.builtin.ping:
+
+    - name: Print hostname
+      ansible.builtin.debug:
+        msg: "Hello from {{ inventory_hostname }}"
