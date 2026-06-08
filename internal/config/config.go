@@ -12,6 +12,7 @@ type Defaults struct {
 	Inventory         string `toml:"inventory"`
 	PlaybookDir       string `toml:"playbook_dir"`
 	VaultPasswordFile string `toml:"vault_password_file"`
+	CommandPrefix     string `toml:"command_prefix"`
 }
 
 type Project struct {
@@ -19,6 +20,7 @@ type Project struct {
 	Inventory         string `toml:"inventory"`
 	PlaybookDir       string `toml:"playbook_dir"`
 	VaultPasswordFile string `toml:"vault_password_file"`
+	CommandPrefix     string `toml:"command_prefix"`
 }
 
 type Config struct {
@@ -57,5 +59,6 @@ func (c *Config) ActiveProjects() []Project {
 		Inventory:         c.Defaults.Inventory,
 		PlaybookDir:       c.Defaults.PlaybookDir,
 		VaultPasswordFile: c.Defaults.VaultPasswordFile,
+		CommandPrefix:     c.Defaults.CommandPrefix,
 	}}
 }

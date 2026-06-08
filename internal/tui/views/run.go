@@ -19,13 +19,12 @@ type RunDoneMsg struct{ Err error }
 
 // taskStatus tracks per-task host counters.
 type taskStatus struct {
-	name        string
-	ok          int
-	changed     int
-	failed      int
-	skipped     int
-	inProgress  int
-	done        bool
+	name    string
+	ok      int
+	changed int
+	failed  int
+	skipped int
+	done    bool
 }
 
 func (t taskStatus) icon() string {
@@ -43,11 +42,11 @@ func (t taskStatus) icon() string {
 
 // Run is the active-playbook screen.
 type Run struct {
-	opts      RunOptionsMsg
-	width     int
-	height    int
-	focus     int // 0=task list, 1=progress, 2=output
-	showHelp  bool
+	opts     RunOptionsMsg
+	width    int
+	height   int
+	focus    int // 0=task list, 1=progress
+	showHelp bool
 
 	tasks       []taskStatus
 	taskIdx     int
@@ -57,15 +56,9 @@ type Run struct {
 	elapsed     time.Duration
 	startTime   time.Time
 
-	// output lines (all + stderr)
-	outputLines  []string
-	stderrLines  []string
-	outputFilter string
+	outputLines []string
+	outputVP    viewport.Model
 
-	outputVP  viewport.Model
-	stderrVP  viewport.Model
-
-	// totals
 	totalOK      int
 	totalChanged int
 	totalFailed  int
@@ -76,13 +69,10 @@ type Run struct {
 type tickMsg struct{}
 
 func NewRun(opts RunOptionsMsg) Run {
-	ovp := viewport.New(0, 0)
-	svp := viewport.New(0, 0)
 	return Run{
 		opts:      opts,
 		startTime: time.Now(),
-		outputVP:  ovp,
-		stderrVP:  svp,
+		outputVP:  viewport.New(0, 0),
 	}
 }
 
@@ -146,7 +136,6 @@ func (r Run) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (r Run) handleEvent(msg runner.LineMsg) Run {
 	if msg.Stderr {
-		r.stderrLines = append(r.stderrLines, msg.Event.Raw)
 		return r
 	}
 	ev := msg.Event
@@ -208,22 +197,8 @@ func (r *Run) appendOutput(line string) {
 }
 
 func (r *Run) refreshOutputVP() {
-	filtered := r.filteredOutput()
-	r.outputVP.SetContent(strings.Join(filtered, "\n"))
+	r.outputVP.SetContent(strings.Join(r.outputLines, "\n"))
 	r.outputVP.GotoBottom()
-}
-
-func (r Run) filteredOutput() []string {
-	if r.outputFilter == "" {
-		return r.outputLines
-	}
-	var out []string
-	for _, l := range r.outputLines {
-		if strings.Contains(l, r.outputFilter) {
-			out = append(out, l)
-		}
-	}
-	return out
 }
 
 func (r *Run) resizeViewports() {
@@ -271,8 +246,8 @@ func (r Run) taskListPane(w, h int) string {
 	}
 	body := "TASKS\n"
 	for i, t := range r.tasks {
-		line := fmt.Sprintf("%s %-30s (%d/%d/%d)",
-			t.icon(), t.name, t.ok, t.failed, t.inProgress)
+		line := fmt.Sprintf("%s %-30s (%d/%d)",
+			t.icon(), t.name, t.ok, t.failed)
 		if i == r.taskIdx {
 			line = styles.Selected.Render(line)
 		}
@@ -299,11 +274,7 @@ func (r Run) progressPane(w, h int) string {
 func (r Run) outputPane(w, h int) string {
 	r.outputVP.Width = w - 2
 	r.outputVP.Height = h - 2
-	label := "OUTPUT"
-	if r.outputFilter != "" {
-		label += fmt.Sprintf(" (filter: %s)", r.outputFilter)
-	}
-	return styles.InactiveBorder.Width(w).Render(label + "\n" + r.outputVP.View())
+	return styles.InactiveBorder.Width(w).Render("OUTPUT\n" + r.outputVP.View())
 }
 
 func (r Run) statusBarView() string {

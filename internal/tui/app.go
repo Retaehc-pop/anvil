@@ -208,19 +208,20 @@ func (a App) applySize(m tea.Model) (tea.Model, tea.Cmd) {
 }
 
 func (a App) loadInventoryCmd() tea.Cmd {
-	inv := a.project.Inventory
+	proj := a.project
 	return func() tea.Msg {
-		tree, err := inventory.Load(context.Background(), inv)
+		tree, err := inventory.Load(context.Background(), proj)
 		return views.InventoryLoadedMsg{Tree: tree, Err: err}
 	}
 }
 
 func (a App) fetchHostVarsCmd(pv views.Preview) tea.Cmd {
 	var cmds []tea.Cmd
+	proj := a.project
 	for _, host := range pv.Hosts() {
 		h := host
 		cmds = append(cmds, func() tea.Msg {
-			vars, err := inventory.FetchHostVars(context.Background(), a.project.Inventory, h)
+			vars, err := inventory.FetchHostVars(context.Background(), proj, h)
 			return views.HostVarsLoadedMsg{Host: h, Vars: vars, Err: err}
 		})
 	}

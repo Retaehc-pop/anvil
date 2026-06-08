@@ -35,7 +35,7 @@ func Run(ctx context.Context, proj config.Project, opts Options, ch chan<- LineM
 	defer close(ch)
 
 	args := buildArgs(proj, opts)
-	cmd := exec.CommandContext(ctx, "ansible-playbook", args...)
+	cmd := prefixedCmd(ctx, proj.CommandPrefix, "ansible-playbook", args...)
 
 	callbackVal := "json"
 	if opts.Format == parser.FormatYAML {
@@ -106,6 +106,18 @@ func buildArgs(proj config.Project, opts Options) []string {
 
 	args = append(args, opts.Playbook)
 	return args
+}
+
+func prefixedCmd(ctx context.Context, prefix, executable string, args ...string) *exec.Cmd {
+	if prefix == "" {
+		return exec.CommandContext(ctx, executable, args...)
+	}
+	// Split prefix into words and append the ansible command + args after them.
+	// e.g. "rex work" → exec("rex", "work", "ansible-playbook", "-i", inv, ...)
+	parts := strings.Fields(prefix)
+	all := append(parts[1:], executable)
+	all = append(all, args...)
+	return exec.CommandContext(ctx, parts[0], all...)
 }
 
 func setEnv(env []string, key, value string) []string {

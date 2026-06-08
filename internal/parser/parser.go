@@ -35,10 +35,9 @@ type Event struct {
 	Play     string
 	Task     string
 	Host     string
-	Msg      string
-	Raw      string
-	Stats    *StatsPayload
-	HostVars map[string]any
+	Msg   string
+	Raw   string
+	Stats *StatsPayload
 }
 
 // StatsPayload holds the final play recap counters.

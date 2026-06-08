@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"os/exec"
 	"sort"
+	"strings"
+
+	"github.com/Retaehc-pop/anvil/internal/config"
 )
 
 // Node is a single item in the inventory tree (group or host).
@@ -22,33 +25,25 @@ type Tree struct {
 	Hosts map[string]*Node // flat lookup by hostname
 }
 
-// rawInventory matches the shape of ansible-inventory --list output.
-type rawInventory struct {
-	Meta struct {
-		HostVars map[string]map[string]any `json:"hostvars"`
-	} `json:"_meta"`
-	All rawGroup `json:"all"`
-	// remaining keys are group names
-	Groups map[string]rawGroup
-}
-
 type rawGroup struct {
 	Hosts    []string          `json:"hosts"`
 	Children []string          `json:"children"`
 	Vars     map[string]string `json:"vars"`
 }
 
-func Load(ctx context.Context, inventoryPath string) (*Tree, error) {
-	out, err := exec.CommandContext(ctx, "ansible-inventory", "-i", inventoryPath, "--list").Output()
+func Load(ctx context.Context, proj config.Project) (*Tree, error) {
+	cmd := prefixedCmd(ctx, proj.CommandPrefix, "ansible-inventory", "-i", proj.Inventory, "--list")
+	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("ansible-inventory: %w", err)
 	}
 	return parse(out)
 }
 
-// FetchHostVars runs ansible-inventory --host <name> and populates node.Vars.
-func FetchHostVars(ctx context.Context, inventoryPath, hostname string) (map[string]any, error) {
-	out, err := exec.CommandContext(ctx, "ansible-inventory", "-i", inventoryPath, "--host", hostname).Output()
+// FetchHostVars runs ansible-inventory --host <name> and returns its variables.
+func FetchHostVars(ctx context.Context, proj config.Project, hostname string) (map[string]any, error) {
+	cmd := prefixedCmd(ctx, proj.CommandPrefix, "ansible-inventory", "-i", proj.Inventory, "--host", hostname)
+	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("ansible-inventory --host: %w", err)
 	}
@@ -57,6 +52,18 @@ func FetchHostVars(ctx context.Context, inventoryPath, hostname string) (map[str
 		return nil, fmt.Errorf("parse host vars: %w", err)
 	}
 	return vars, nil
+}
+
+// prefixedCmd builds an exec.Cmd, prepending any command_prefix words before
+// the ansible executable. e.g. prefix="rex" → exec("rex", "ansible-inventory", ...)
+func prefixedCmd(ctx context.Context, prefix, executable string, args ...string) *exec.Cmd {
+	if prefix == "" {
+		return exec.CommandContext(ctx, executable, args...)
+	}
+	parts := strings.Fields(prefix)
+	all := append(parts[1:], executable)
+	all = append(all, args...)
+	return exec.CommandContext(ctx, parts[0], all...)
 }
 
 func parse(data []byte) (*Tree, error) {

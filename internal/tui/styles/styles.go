@@ -48,8 +48,7 @@ var (
 			Padding(0, 1)
 
 	// Help key hints
-	KeyHint  = lipgloss.NewStyle().Foreground(Dim)
-	KeyLabel = lipgloss.NewStyle().Foreground(Blue).Bold(true)
+	KeyHint = lipgloss.NewStyle().Foreground(Dim)
 
 	// Selected list item
 	Selected = lipgloss.NewStyle().Foreground(Blue).Bold(true)

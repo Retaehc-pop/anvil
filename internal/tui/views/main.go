@@ -41,9 +41,8 @@ type InventoryLoadedMsg struct {
 
 // inventoryItem is a flat row in the tree view (group or host + indent level).
 type inventoryItem struct {
-	node     *inventory.Node
-	depth    int
-	expanded bool // only meaningful for groups
+	node  *inventory.Node
+	depth int
 }
 
 // Main is the primary screen: playbook list + inventory tree + run options.
@@ -403,7 +402,7 @@ func (m Main) helpView() string {
 
 // flattenTree converts the tree into a flat slice respecting expand state.
 func flattenTree(node *inventory.Node, depth int, expanded map[string]bool) []inventoryItem {
-	rows := []inventoryItem{{node: node, depth: depth, expanded: expanded[node.Name]}}
+	rows := []inventoryItem{{node: node, depth: depth}}
 	if node.IsGroup && expanded[node.Name] {
 		for _, child := range node.Children {
 			rows = append(rows, flattenTree(child, depth+1, expanded)...)
